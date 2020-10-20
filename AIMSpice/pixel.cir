@@ -1,0 +1,16 @@
+[aimspice]
+[description]
+228
+.include PhotoDiode.cir
+
+.subckt Pixel VDD EXPOSE ERASE OUT
+	xPD1 VDD N1 PhotoDiode Ipd=750p
+
+	*DRAIN GATE  SOURCE BULK
+	MN1 N1 EXPOSE N2 0 NMOS L=0.7U W=3U
+	
+	MN2 OUT ERASE 0 0 NMOS L =0.7U W=3U
+	
+	C1 OUT 0 2p	
+.ends
+[end]
