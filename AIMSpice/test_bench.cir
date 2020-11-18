@@ -1,6 +1,6 @@
 [aimspice]
 [description]
-3320
+4025
 Untitled circuit* This is a parametrized testbench for your pixel circuit array
 
 * You should at least test your circuit with:
@@ -21,7 +21,7 @@ Untitled circuit* This is a parametrized testbench for your pixel circuit array
 
 
 
-.param Ipd_1 = 50p ! Photodiode current, range [50 pA, 750 pA]
+.param Ipd_1 = 750p ! Photodiode current, range [50 pA, 750 pA]
 .param VDD = 1.8 ! Supply voltage
 .param EXPOSURETIME = 30m ! Exposusre time, range [2 ms, 30 ms]
 
@@ -41,18 +41,6 @@ VERASE ERASE 0 dc 0 pulse(0 VDD ERASE_DLY TRF TRF CLK_PERIOD PERIOD)
 VNRE_R1 NRE_R1 0 dc 0 pulse(VDD 0 NRE_R1_DLY TRF TRF CLK_PERIOD PERIOD)
 VNRE_R2 NRE_R2 0 dc 0  pulse(VDD 0 NRE_R2_DLY TRF TRF CLK_PERIOD PERIOD)
 
-.subckt PixelSegment VDD VSS EXPOSE OUT
-	xPD0 VDD OUT PhotoDiode Ipd=750p
-
-	*DRAIN GATE  SOURCE BULK
-	MN1 N1 EXPOSE OUT VSS NMOS L=2U W=2U
-	
-	!MN2 OUT ERASE VSS VSS NMOS L =0.7U W=3U
-	
-	C1 OUT VSS 1u	
-	!R0 OUT VSS 1k
-
-.ends
 		******************
 		***DEFINE PIXEL***
 		******************
@@ -65,11 +53,15 @@ VNRE_R2 NRE_R2 0 dc 0  pulse(VDD 0 NRE_R2_DLY TRF TRF CLK_PERIOD PERIOD)
 	
 	M2 N2 ERASE VSS VSS NMOS L =1.08U W=1.08U
 	
-	C1 N2 VSS 2p	
+	C1 N2 VSS 1.7p	
 
 	M3 VSS N2 N3 VDD PMOS L =0.36U W=5.04U
-	M4 N3 NRE OUT VDD PMOS L =1.08U W=1.08U
-	!R0 OUT VDD 10M
+	M4 N3 NRE OUT VDD PMOS L =0.36U W=5.04U
+	
+
+	***Removed when testing the pixel array***
+	MC1 OUT OUT VDD VDD PMOS L =1.08U W=1.08U
+	CC1 OUT VSS 3p
 .ends 
 
 		************************
@@ -84,27 +76,54 @@ VNRE_R2 NRE_R2 0 dc 0  pulse(VDD 0 NRE_R2_DLY TRF TRF CLK_PERIOD PERIOD)
 	xPixel2_1 VDD VSS EXPOSE ERASE NRE_R2 OUT1 Pixel
 	xPixel2_2 VDD VSS EXPOSE ERASE NRE_R2 OUT2 Pixel
 
-	**LOAD**
-	MC1 OUT1 OUT1 VDD VDD PMOS L =1.0U W=1.67U
-	MC2 OUT2 OUT2 VDD VDD PMOS L =1.0U W=1.67U
+	**ACTIVE LOAD**
+	MC1 OUT1 OUT1 VDD VDD PMOS L =1.08U W=1.08U
+	MC2 OUT2 OUT2 VDD VDD PMOS L =1.08U W=1.08U
 
 	**CAPACITORS**
 	CC1 OUT1 VSS 3p
-	CC2 OUT1 VSS 3p
+	CC2 OUT2 VSS 3p
 
 .ends
 
-xmy_pixelArray 1 0 EXPOSE ERASE NRE_R1 NRE_R2 OUT1 OUT2 PixelArray
+
+		*****************************************
+		***DEFINE SWITCH FOR CORNER SIMULATION***
+		*****************************************
+
+.subckt Switch VDD VSS EXPOSE 
+	xPD1 VDD N1 PhotoDiode Ipd=750p
+
+	*DRAIN GATE  SOURCE BULK
+	M1 N1 EXPOSE N2 VSS NMOS L=0.36U W=5.04U
+		
+	R1 N2 VSS 10k	
+.ends
+
+!xmy_pixelArray 1 0 EXPOSE ERASE NRE_R1 NRE_R2 OUT1 OUT2 PixelArray
 
 
-!xmy_pixel 1 0 EXPOSE ERASE NRE_R1 OUT Pixel
+xmy_pixel 1 0 EXPOSE ERASE NRE_R1 OUT Pixel
 !.plot V(OUT)
 
 
-.plot V(EXPOSE) V(ERASE) V(NRE_R1) V(OUT1)
+!xmy_switch 1 0 EXPOSE Switch
+
+!.plot rds(M:my_switch:1) id(M:my_switch:1)
+!.plot V(EXPOSE) 
+
+***Single pixel***
+.plot V(EXPOSE) V(ERASE) V(NRE_R1) V(my_pixel:N2) V(OUT)!general plot
+!.plot V(EXPOSE) V(ERASE) V(NRE_R1) V(my_pixel:N2) id(M:my_pixel:2) id(M:my_pixel:1) id(M:my_pixel:4)
+!.plot V(EXPOSE) V(ERASE) V(NRE_R1) rds(M:my_pixel:3) rds(M:my_pixel:C1)
+!.plot rds(M:my_pixel:3) rds(M:my_pixel:C1)
+!.plot V(EXPOSE) V(ERASE) vds(M:my_pixel:1)
+!.plot id(M:my_pixel:2) id(M:my_pixel:1)  id(M:my_pixel:4)
+
+***Pixel array***
+!.plot V(EXPOSE) V(ERASE) V(NRE_R1) V(NRE_R2) V(OUT1) V(OUT2) V(my_pixelArray:N2Pixel1_1)!general plot
 !.plot V(OUT1) V(OUT2) ! signals going to ADC
-!.plot V(EXPOSE) V(NRE_R1) V(NRE_R2) V(ERASE)
-!.plot V(OUT_SAMPLED1)
+
 [dc]
 1
 V1
@@ -112,7 +131,7 @@ V1
 3
 0.1
 [tran]
-0.1m
+0.01m
 60m
 X
 X

@@ -7,7 +7,7 @@
                  *                                           *
                  *********************************************
 
-	Date: Tue Nov 10 10:33:34 2020
+	Date: Wed Nov 18 14:07:27 2020
 	Circuit File: \\tsclient\C\Users\Inge\Documents\GitHub\TFE4152-project\AIMSpice\test_bench.cir
 	Analysis: Transient
 
@@ -204,7 +204,7 @@
    189:  
    190:  
    191:  
-   192:  .param Ipd_1 = 50p ! Photodiode current, range [50 pA, 750 pA]
+   192:  .param Ipd_1 = 750p ! Photodiode current, range [50 pA, 750 pA]
    193:  .param VDD = 1.8 ! Supply voltage
    194:  .param EXPOSURETIME = 30m ! Exposusre time, range [2 ms, 30 ms]
    195:  
@@ -224,71 +224,90 @@
    209:  VNRE_R1 NRE_R1 0 dc 0 pulse(VDD 0 NRE_R1_DLY TRF TRF CLK_PERIOD PERIOD)
    210:  VNRE_R2 NRE_R2 0 dc 0  pulse(VDD 0 NRE_R2_DLY TRF TRF CLK_PERIOD PERIOD)
    211:  
-   212:  .subckt PixelSegment VDD VSS EXPOSE OUT
-   213:  	xPD0 VDD OUT PhotoDiode Ipd=750p
-   214:  
-   215:  	*DRAIN GATE  SOURCE BULK
-   216:  	MN1 N1 EXPOSE OUT VSS NMOS L=2U W=2U
-   217:  	
-   218:  	!MN2 OUT ERASE VSS VSS NMOS L =0.7U W=3U
-   219:  	
-   220:  	C1 OUT VSS 1u	
-   221:  	!R0 OUT VSS 1k
-   222:  
-   223:  .ends
-   224:  		******************
-   225:  		***DEFINE PIXEL***
-   226:  		******************
-   227:   
-   228:  .subckt Pixel VDD VSS EXPOSE ERASE NRE OUT
-   229:  	xPD1 VDD N1 PhotoDiode Ipd=750p
-   230:  
-   231:  	*DRAIN GATE  SOURCE BULK
-   232:  	M1 N1 EXPOSE N2 VSS NMOS L=0.36U W=5.04U
-   233:  	
-   234:  	M2 N2 ERASE VSS VSS NMOS L =1.08U W=1.08U
-   235:  	
-   236:  	C1 N2 VSS 2p	
-   237:  
-   238:  	M3 VSS N2 N3 VDD PMOS L =0.36U W=5.04U
-   239:  	M4 N3 NRE OUT VDD PMOS L =1.08U W=1.08U
-   240:  	!R0 OUT VDD 10M
-   241:  .ends 
-   242:  
-   243:  		************************
-   244:  		***DEFINE PIXEL ARRAY***
-   245:  		************************
+   212:  		******************
+   213:  		***DEFINE PIXEL***
+   214:  		******************
+   215:   
+   216:  .subckt Pixel VDD VSS EXPOSE ERASE NRE OUT
+   217:  	xPD1 VDD N1 PhotoDiode Ipd=750p
+   218:  
+   219:  	*DRAIN GATE  SOURCE BULK
+   220:  	M1 N1 EXPOSE N2 VSS NMOS L=0.36U W=5.04U
+   221:  	
+   222:  	M2 N2 ERASE VSS VSS NMOS L =1.08U W=1.08U
+   223:  	
+   224:  	C1 N2 VSS 1.7p	
+   225:  
+   226:  	M3 VSS N2 N3 VDD PMOS L =0.36U W=5.04U
+   227:  	M4 N3 NRE OUT VDD PMOS L =0.36U W=5.04U
+   228:  	
+   229:  
+   230:  	***Removed when testing the pixel array***
+   231:  	MC1 OUT OUT VDD VDD PMOS L =1.08U W=1.08U
+   232:  	CC1 OUT VSS 3p
+   233:  .ends 
+   234:  
+   235:  		************************
+   236:  		***DEFINE PIXEL ARRAY***
+   237:  		************************
+   238:  
+   239:  .subckt PixelArray VDD VSS EXPOSE ERASE NRE_R1 NRE_R2 OUT1 OUT2
+   240:  	
+   241:  	**PIXEL**
+   242:  	xPixel1_1 VDD VSS EXPOSE ERASE NRE_R1 OUT1 Pixel
+   243:  	xPixel1_2 VDD VSS EXPOSE ERASE NRE_R1 OUT2 Pixel
+   244:  	xPixel2_1 VDD VSS EXPOSE ERASE NRE_R2 OUT1 Pixel
+   245:  	xPixel2_2 VDD VSS EXPOSE ERASE NRE_R2 OUT2 Pixel
    246:  
-   247:  .subckt PixelArray VDD VSS EXPOSE ERASE NRE_R1 NRE_R2 OUT1 OUT2
-   248:  	
-   249:  	**PIXEL**
-   250:  	xPixel1_1 VDD VSS EXPOSE ERASE NRE_R1 OUT1 Pixel
-   251:  	xPixel1_2 VDD VSS EXPOSE ERASE NRE_R1 OUT2 Pixel
-   252:  	xPixel2_1 VDD VSS EXPOSE ERASE NRE_R2 OUT1 Pixel
-   253:  	xPixel2_2 VDD VSS EXPOSE ERASE NRE_R2 OUT2 Pixel
+   247:  	**ACTIVE LOAD**
+   248:  	MC1 OUT1 OUT1 VDD VDD PMOS L =1.08U W=1.08U
+   249:  	MC2 OUT2 OUT2 VDD VDD PMOS L =1.08U W=1.08U
+   250:  
+   251:  	**CAPACITORS**
+   252:  	CC1 OUT1 VSS 3p
+   253:  	CC2 OUT2 VSS 3p
    254:  
-   255:  	**LOAD**
-   256:  	MC1 OUT1 OUT1 VDD VDD PMOS L =1.0U W=1.67U
-   257:  	MC2 OUT2 OUT2 VDD VDD PMOS L =1.0U W=1.67U
-   258:  
-   259:  	**CAPACITORS**
-   260:  	CC1 OUT1 VSS 3p
-   261:  	CC2 OUT1 VSS 3p
-   262:  
-   263:  .ends
+   255:  .ends
+   256:  
+   257:  
+   258:  		*****************************************
+   259:  		***DEFINE SWITCH FOR CORNER SIMULATION***
+   260:  		*****************************************
+   261:  
+   262:  .subckt Switch VDD VSS EXPOSE 
+   263:  	xPD1 VDD N1 PhotoDiode Ipd=750p
    264:  
-   265:  xmy_pixelArray 1 0 EXPOSE ERASE NRE_R1 NRE_R2 OUT1 OUT2 PixelArray
-   266:  
-   267:  
-   268:  !xmy_pixel 1 0 EXPOSE ERASE NRE_R1 OUT Pixel
-   269:  !.plot V(OUT)
+   265:  	*DRAIN GATE  SOURCE BULK
+   266:  	M1 N1 EXPOSE N2 VSS NMOS L=0.36U W=5.04U
+   267:  		
+   268:  	R1 N2 VSS 10k	
+   269:  .ends
    270:  
-   271:  
-   272:  .plot V(EXPOSE) V(ERASE) V(NRE_R1) V(OUT1)
-   273:  !.plot V(OUT1) V(OUT2) ! signals going to ADC
-   274:  !.plot V(EXPOSE) V(NRE_R1) V(NRE_R2) V(ERASE)
-   275:  !.plot V(OUT_SAMPLED1)
-   276:  .tran 0.1m 60m
+   271:  !xmy_pixelArray 1 0 EXPOSE ERASE NRE_R1 NRE_R2 OUT1 OUT2 PixelArray
+   272:  
+   273:  
+   274:  xmy_pixel 1 0 EXPOSE ERASE NRE_R1 OUT Pixel
+   275:  !.plot V(OUT)
+   276:  
+   277:  
+   278:  !xmy_switch 1 0 EXPOSE Switch
+   279:  
+   280:  !.plot rds(M:my_switch:1) id(M:my_switch:1)
+   281:  !.plot V(EXPOSE) 
+   282:  
+   283:  ***Single pixel***
+   284:  .plot V(EXPOSE) V(ERASE) V(NRE_R1) V(my_pixel:N2) V(OUT)!general plot
+   285:  !.plot V(EXPOSE) V(ERASE) V(NRE_R1) V(my_pixel:N2) id(M:my_pixel:2) id(M:my_pixel:1) id(M:my_pixel:4)
+   286:  !.plot V(EXPOSE) V(ERASE) V(NRE_R1) rds(M:my_pixel:3) rds(M:my_pixel:C1)
+   287:  !.plot rds(M:my_pixel:3) rds(M:my_pixel:C1)
+   288:  !.plot V(EXPOSE) V(ERASE) vds(M:my_pixel:1)
+   289:  !.plot id(M:my_pixel:2) id(M:my_pixel:1)  id(M:my_pixel:4)
+   290:  
+   291:  ***Pixel array***
+   292:  !.plot V(EXPOSE) V(ERASE) V(NRE_R1) V(NRE_R2) V(OUT1) V(OUT2) V(my_pixelArray:N2Pixel1_1)!general plot
+   293:  !.plot V(OUT1) V(OUT2) ! signals going to ADC
+   294:  
+   295:  .tran 0.01m 60m
 
 ***************************  Model Parameters  ****************************
 
@@ -299,7 +318,7 @@
 
 **************************  Analysis Parameters  **************************
 
-	Stepsize ............ : 0.1m
+	Stepsize ............ : 0.01m
 	Final time .......... : 60m
 	Use Initial Conditions: Off
 
@@ -311,19 +330,19 @@
 
 *************************  Simulation Statistics  *************************
 
-	Total number of iterations.....................: 630
-	Number of iterations for transient analysis....: 606
-	Total number of timepoints.....................: 197
-	Number of timepoints accepted..................: 177
-	Number of timepoints rejected..................: 20
-	Total analysis time (sec)......................: 0.033
-	Transient analysis time (sec)..................: 0.031
-	Time spent in device loading (sec).............: 0.008
+	Total number of iterations.....................: 509
+	Number of iterations for transient analysis....: 486
+	Total number of timepoints.....................: 182
+	Number of timepoints accepted..................: 169
+	Number of timepoints rejected..................: 13
+	Total analysis time (sec)......................: 0.026
+	Transient analysis time (sec)..................: 0.025
+	Time spent in device loading (sec).............: 0.005
 	Time spent in L-U decomposition (sec)..........: 0
 	Time spent in matrix reordering (sec)..........: 0
-	Time spent in matrix solving (sec).............: 0.003
+	Time spent in matrix solving (sec).............: 0
 	Time spent in transient L-U decomposition (sec): 0
-	Time spent in transient matrix solving (sec)...: 0.003
+	Time spent in transient matrix solving (sec)...: 0
 
 ***************************  Kernel Messages  *****************************
 
@@ -334,14 +353,13 @@ Warning: parameter xl not supported; value ignored
 Warning: parameter xw not supported; value ignored
 Warning: parameter xl not supported; value ignored
 Warning: parameter xw not supported; value ignored
-Warning: Pd = 0 is less than W for m:my_pixelarray:c2 in model pmos.
-Warning: Ps = 0 is less than W for m:my_pixelarray:c2 in model pmos.
-Warning: Pd = 0 is less than W for m:my_pixelarray:pixel2_2:4 in model pmos.
-Warning: Ps = 0 is less than W for m:my_pixelarray:pixel2_2:4 in model pmos.
-Warning: Pd = 0 is less than W for m:my_pixelarray:pixel2_2:3 in model pmos.
-Warning: Ps = 0 is less than W for m:my_pixelarray:pixel2_2:3 in model pmos.
-Warning: Pd = 0 is less than W for m:my_pixelarray:pixel2_2:2 in model nmos.
-Warning: Ps = 0 is less than W for m:my_pixelarray:pixel2_2:2 in model nmos.
-Warning: Pd = 0 is less than W for m:my_pixelarray:pixel2_2:1 in model nmos.
-Warning: Ps = 0 is less than W for m:my_pixelarray:pixel2_2:1 in model nmos.
+Warning: Pd = 0 is less than W for m:my_pixel:c1 in model pmos.
+Warning: Ps = 0 is less than W for m:my_pixel:c1 in model pmos.
+Warning: Pd = 0 is less than W for m:my_pixel:4 in model pmos.
+Warning: Ps = 0 is less than W for m:my_pixel:4 in model pmos.
+Warning: Pd = 0 is less than W for m:my_pixel:2 in model nmos.
+Warning: Ps = 0 is less than W for m:my_pixel:2 in model nmos.
+Warning: Pd = 0 is less than W for m:my_pixel:1 in model nmos.
+Warning: Ps = 0 is less than W for m:my_pixel:1 in model nmos.
+Warning: Node nre_r2 has less than two connections
 
